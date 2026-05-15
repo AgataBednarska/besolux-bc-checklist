@@ -227,6 +227,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <div class="toolbar">
     <button id="expand-btn" onclick="toggleAll()">📂 Rozwiń wszystko</button>
     <button onclick="resetAll()" class="danger">🔄 Wyczyść zaznaczenia</button>
+    <button onclick="copyShareLink()" title="Skopiuj link ze stanem – otwórz w dowolnej przeglądarce/oknie">📋 Skopiuj link</button>
     <button onclick="exportState()" title="Pobierz plik JSON ze stanem checklisty (otwórz w innej przeglądarce)">💾 Backup stanu</button>
     <label class="toolbar-file-btn" title="Wczytaj plik JSON z innej przeglądarki / karty">📂 Wczytaj stan<input type="file" accept=".json" onchange="importState(event)" style="display:none"></label>
     <span class="status-msg" id="status-msg">Zmiany zapisują się automatycznie.</span>
@@ -985,11 +986,48 @@ function saveState() {
   s._hidden_phases = hiddenPhases;
 
   localStorage.setItem(STORE, JSON.stringify(s));
+  updateURLHash(s);
   flashSaved();
+}
+
+// ── URL hash state (shareable links) ────────────────────────────────────────
+function _stateToHash(s) {
+  const share = {};
+  Object.keys(s).forEach(k => {
+    if (k.startsWith('cb_') || k === '_del' || k === '_custom' || k === '_hidden_phases') share[k] = s[k];
+  });
+  try { return btoa(unescape(encodeURIComponent(JSON.stringify(share)))); } catch(e) { return null; }
+}
+function _hashToState(hash) {
+  const m = hash.match(/[#&]state=([^&]*)/);
+  if (!m) return null;
+  try { return JSON.parse(decodeURIComponent(escape(atob(m[1])))); } catch(e) { return null; }
+}
+function updateURLHash(s) {
+  const enc = _stateToHash(s);
+  if (enc) history.replaceState(null, '', '#state=' + enc);
+}
+function copyShareLink() {
+  const url = window.location.href;
+  const done = () => {
+    const msg = document.getElementById('status-msg');
+    const old = msg.textContent;
+    msg.textContent = '📋 Link skopiowany ✓';
+    setTimeout(() => { msg.textContent = 'Zmiany zapisują się automatycznie.'; }, 2500);
+  };
+  if (navigator.clipboard) { navigator.clipboard.writeText(url).then(done).catch(() => prompt('Skopiuj link:', url)); }
+  else { prompt('Skopiuj link:', url); done(); }
 }
 
 // ── Load state ────────────────────────────────────────────────────────────────
 function loadState() {
+  // 0. Check URL hash (shared link) — merge over localStorage
+  const hashState = _hashToState(window.location.hash);
+  if (hashState) {
+    const existing = localStorage.getItem(STORE);
+    const merged = existing ? Object.assign(JSON.parse(existing), hashState) : hashState;
+    localStorage.setItem(STORE, JSON.stringify(merged));
+  }
   const raw = localStorage.getItem(STORE);
   if (!raw) return;
   const s = JSON.parse(raw);
