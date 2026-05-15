@@ -1,0 +1,1139 @@
+﻿<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BesoLux – Lista kontrolna wdrożenia BC</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f7; min-height: 100vh; }
+
+/* ── Header ── */
+.header {
+  background: #1e1e2e; color: #fff;
+  padding: 16px 28px; position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 10px rgba(0,0,0,.3);
+}
+.header h1 { font-size: 17px; font-weight: 700; }
+.header p  { font-size: 11px; opacity: .6; margin-top: 2px; }
+.overall-bar { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.overall-bar .pct { font-size: 22px; font-weight: 800; color: #86efac; min-width: 48px; text-align: right; }
+.bar-wrap { width: 140px; height: 8px; background: rgba(255,255,255,.15); border-radius: 4px; overflow: hidden; }
+.bar-fill  { height: 100%; background: linear-gradient(90deg, #4ade80, #22d3ee); border-radius: 4px; transition: width .4s; }
+
+/* ── Main ── */
+.main { max-width: 900px; margin: 0 auto; padding: 28px 20px 60px; }
+
+/* ── Phase block ── */
+.phase {
+  background: #fff; border-radius: 14px; margin-bottom: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.07); overflow: hidden;
+}
+.phase-header {
+  display: flex; align-items: center; gap: 12px; padding: 16px 20px;
+  cursor: pointer; user-select: none; transition: background .15s;
+  border-left: 5px solid transparent;
+}
+.phase-header:hover { background: #fafafa; }
+.phase-icon { font-size: 22px; flex-shrink: 0; }
+.phase-info { flex: 1; }
+.phase-info h2 { font-size: 15px; font-weight: 700; }
+.phase-info p  { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.phase-progress { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.phase-pct { font-size: 13px; font-weight: 700; min-width: 36px; text-align: right; }
+.mini-bar { width: 80px; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+.mini-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+.chevron { color: #9ca3af; font-size: 18px; transition: transform .25s; flex-shrink: 0; }
+.phase.open .chevron { transform: rotate(90deg); }
+
+.phase-body { display: none; border-top: 1px solid #f0f0f0; }
+.phase.open .phase-body { display: block; }
+
+/* ── Section ── */
+.section { padding: 14px 20px 8px; border-bottom: 1px solid #f5f5f5; }
+.section:last-child { border-bottom: none; }
+.section-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .6px; color: #6b7280; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 7px;
+}
+.section-title span { font-size: 14px; }
+.section-process-link {
+  margin-left: auto; font-size: 10px; color: #6366f1; text-decoration: none;
+  padding: 2px 9px; border-radius: 10px; background: #eff6ff;
+  white-space: nowrap; font-weight: 600; flex-shrink: 0; opacity: .75;
+}
+.section-process-link:hover { background: #dbeafe; color: #1d4ed8; opacity: 1; }
+
+/* ── Checklist item ── */
+.item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 7px 8px; border-radius: 6px; cursor: pointer;
+  transition: background .1s;
+}
+.item:hover { background: #f8f9fb; }
+.item input[type=checkbox] {
+  width: 17px; height: 17px; flex-shrink: 0; cursor: pointer;
+  accent-color: #6366f1; margin-top: 1px;
+}
+.item-content { flex: 1; }
+.item-text {
+  font-size: 13px; line-height: 1.45; color: #374151;
+  transition: color .15s;
+}
+.item.done .item-text { color: #9ca3af; text-decoration: line-through; }
+.item-sub {
+  font-size: 11px; color: #9ca3af; margin-top: 2px; line-height: 1.4;
+}
+.item-tag {
+  flex-shrink: 0; font-size: 10px; padding: 2px 7px; border-radius: 10px;
+  font-weight: 600; margin-top: 2px; white-space: nowrap;
+}
+.tag-dec  { background: #fff8e1; color: #92400e; }
+.tag-int  { background: #eff6ff; color: #1e40af; }
+.tag-key  { background: #fce7f3; color: #9d174d; }
+.tag-ok   { background: #f0fdf4; color: #166534; }
+
+/* ── Notes ── */
+.note-wrap { padding: 4px 8px 12px 35px; }
+.note-input {
+  width: 100%; min-height: 34px; padding: 6px 10px;
+  border: 1px solid #e5e7eb; border-radius: 6px; font-size: 12px;
+  color: #374151; resize: vertical; font-family: inherit;
+  background: #fafafa; transition: border-color .15s;
+}
+.note-input:focus { outline: none; border-color: #818cf8; background: #fff; }
+.note-input::placeholder { color: #d1d5db; }
+
+/* ── Item controls ── */
+.item-btn {
+  flex-shrink: 0; border: none; background: none; cursor: pointer;
+  font-size: 13px; padding: 2px 5px; border-radius: 4px;
+  opacity: 0; transition: opacity .15s, background .1s;
+  line-height: 1; align-self: flex-start; margin-top: 1px;
+}
+.item:hover .item-btn { opacity: 1; }
+.comment-btn { color: #9ca3af; }
+.comment-btn:hover, .comment-btn.active { background: #ede9fe; color: #7c3aed; opacity:1; }
+.comment-btn.has-comment { opacity: 1; color: #7c3aed; }
+.del-btn { color: #d1d5db; font-size: 16px; font-weight: 700; }
+.del-btn:hover { background: #fee2e2; color: #dc2626; opacity:1; }
+.item.deleted, .item-comment.deleted { display: none !important; }
+
+/* ── Item comment ── */
+.item-comment {
+  display: none;
+  padding: 0 8px 8px 36px;
+}
+.item-comment.visible { display: block; }
+.item-comment textarea {
+  width: 100%; min-height: 46px; padding: 6px 10px;
+  border: 1px solid #c4b5fd; border-radius: 6px; font-size: 12px;
+  color: #374151; resize: vertical; font-family: inherit; background: #faf5ff;
+}
+.item-comment textarea:focus { outline: none; border-color: #7c3aed; }
+.item-comment textarea::placeholder { color: #c4b5fd; }
+
+/* ── Add item button ── */
+.add-item-btn {
+  display: block; width: calc(100% - 16px); margin: 4px 8px 6px;
+  padding: 5px 12px; border: 1.5px dashed #e5e7eb; border-radius: 6px;
+  background: none; color: #9ca3af; font-size: 12px; cursor: pointer;
+  text-align: left; font-family: inherit; transition: all .15s;
+}
+.add-item-btn:hover { border-color: #818cf8; color: #6366f1; background: #f5f3ff; }
+
+/* ── Custom item ── */
+.item.custom-item { background: #f9fafb; }
+.item.custom-item .item-text[contenteditable] {
+  min-width: 200px; cursor: text; border-bottom: 1px dashed #d1d5db;
+  outline: none; padding-bottom: 1px;
+}
+.item.custom-item .item-text[contenteditable]:focus { border-color: #818cf8; }
+
+/* ── Phase colors ── */
+.ph0 { border-left-color: #8b5cf6 !important; }
+.ph1 { border-left-color: #16a34a !important; }
+.ph2 { border-left-color: #dc2626 !important; }
+.ph3 { border-left-color: #059669 !important; }
+.ph4 { border-left-color: #2563eb !important; }
+.ph5 { border-left-color: #475569 !important; }
+.ph6 { border-left-color: #ea580c !important; }
+.ph7 { border-left-color: #db2777 !important; }
+
+.mf0 { background: #8b5cf6; }
+.mf1 { background: #16a34a; }
+.mf2 { background: #dc2626; }
+.mf3 { background: #059669; }
+.mf4 { background: #2563eb; }
+.mf5 { background: #475569; }
+.mf6 { background: #ea580c; }
+.mf7 { background: #db2777; }
+.phP { border-left-color: #d97706 !important; }
+.mfP { background: #d97706; }
+
+/* ── Toolbar ── */
+.toolbar { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+.toolbar button {
+  padding: 7px 16px; border-radius: 7px; border: 1px solid #e5e7eb;
+  background: #fff; font-size: 12px; cursor: pointer; color: #374151;
+  font-weight: 500; transition: background .15s;
+}
+.toolbar button:hover { background: #f3f4f6; }
+.toolbar button.danger { color: #ef4444; border-color: #fca5a5; }
+.toolbar button.danger:hover { background: #fff1f2; }
+.status-msg { font-size: 11px; color: #9ca3af; }
+
+/* ── Expand all ── */
+#expand-btn { }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>BesoLux – Lista kontrolna wdrożenia Business Central</h1>
+    <p>BesoLux × Nav24 · maj 2026 · Comarch Optima → Microsoft BC</p>
+  </div>
+  <div class="overall-bar">
+    <div>
+      <div class="bar-wrap"><div class="bar-fill" id="overall-fill" style="width:0%"></div></div>
+      <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:3px;text-align:right" id="overall-count">0 / 0</div>
+    </div>
+    <div class="pct" id="overall-pct">0%</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="toolbar">
+    <button id="expand-btn" onclick="toggleAll()">📂 Rozwiń wszystko</button>
+    <button onclick="resetAll()" class="danger">🔄 Wyczyść zaznaczenia</button>
+    <span class="status-msg" id="status-msg">Zmiany zapisują się automatycznie w przeglądarce.</span>
+  </div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ETAP 0 – FAZA ANALITYCZNA
+════════════════════════════════════════════════════════════ -->
+<div class="phase" id="ph0">
+  <div class="phase-header ph0" onclick="toggle('ph0')">
+    <div class="phase-icon">🔍</div>
+    <div class="phase-info">
+      <h2>Etap 0 – Faza analityczna (Discovery &amp; GAP)</h2>
+      <p>Zrozumienie procesów As-Is, zakres projektu, kluczowe decyzje przed startem konfiguracji</p>
+    </div>
+    <div class="phase-progress">
+      <div class="mini-bar"><div class="mini-fill mf0" id="ph0-fill" style="width:0%"></div></div>
+      <div class="phase-pct" id="ph0-pct">0%</div>
+    </div>
+    <div class="chevron">›</div>
+  </div>
+  <div class="phase-body">
+
+    <div class="section">
+      <div class="section-title"><span>📋</span> Kickoff i zakres projektu</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Kickoff meeting z kluczowymi osobami BesoLux (Kinga, Kamil M., Recep)</div><div class="item-sub">Prezentacja metodyki Nav24, harmonogram, role i odpowiedzialności</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Zebranie i przegląd dokumentacji As-Is z Comarch Optima</div><div class="item-sub">Procesy sprzedaży, zakupów, magazynu, finansów – jak to działa teraz</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Weryfikacja zakresu: BesoLux PL vs BesoLux LUX</div><div class="item-sub">Czy LUX wdraża ten sam zakres co PL? Czy osobna instancja BC?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Lista systemów zewnętrznych do integracji (Pimcore, Shopify, Partner Portal, Power BI, Zendesk, Shipup)</div><div class="item-sub">Kto jest właścicielem każdego systemu, kto buduje integrację</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Identyfikacja aplikacji do zastąpienia przez BC (OfertApp, ReturnApp, Cands App, ScanApp)</div><div class="item-sub">Co BC zastępuje, co zostaje, co wymaga dostosowania</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Akceptacja zakresu projektu przez sponsor (sign-off)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>❓</span> Kluczowe pytania / decyzje do podjęcia na starcie</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Jedna instancja BC (2 spółki) czy oddzielne instancje PL + LUX?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Czy wdrażamy WMS w BC (Bins, Directed Put-Away) czy proste lokalizacje?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Czy historia transakcji przenosi się do BC czy zostaje w Optima (archiwum)?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Data docelowego go-live / cutover</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Czy HRM Comarch integruje się z BC (kadry/płace)?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Model integracji VeePee (VP) – przez Shopify czy osobna integracja?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Kto buduje integracje? Nav24 / IT BesoLux / zewnętrzny partner?</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🗺️</span> Warsztaty mapowania procesów – kick-off</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Zaplanowanie harmonogramu warsztatów mapowania per obszar</div><div class="item-sub">Sprzedaż, Produkcja, Zakupy, Magazyn, Finanse – oddzielne sesje z właścicielami procesów</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Stworzenie szablonu dokumentacji As-Is → To-Be (standard Nav24)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">GAP Analysis – konsolidacja wyników ze wszystkich obszarów</div><div class="item-sub">Po zakończeniu warsztatów – lista odchyleń od standardu BC, zakres customizacji</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Prezentacja wyników GAP Analysis dla BesoLux (sign-off)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📝</span> Notatki – Etap analityczny</div>
+      <textarea class="note-input" placeholder="Notatki ze spotkań, ustalenia, pytania otwarte…" data-key="note-ph0" oninput="saveNote(this)"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ETAP 1 – MASTER DATA (najważniejszy fundament!)
+════════════════════════════════════════════════════════════ -->
+<div class="phase" id="ph1">
+  <div class="phase-header ph1" onclick="toggle('ph1')">
+    <div class="phase-icon">📦</div>
+    <div class="phase-info">
+      <h2>Etap 1 – Master Data ⭐ FUNDAMENT</h2>
+      <p>Dane podstawowe muszą być gotowe zanim uruchomimy jakikolwiek moduł transakcyjny</p>
+    </div>
+    <div class="phase-progress">
+      <div class="mini-bar"><div class="mini-fill mf1" id="ph1-fill" style="width:0%"></div></div>
+      <div class="phase-pct" id="ph1-pct">0%</div>
+    </div>
+    <div class="chevron">›</div>
+  </div>
+  <div class="phase-body">
+
+    <div class="section">
+      <div class="section-title"><span>🛋️</span> Produkty / Towary (Items)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Ustalić strukturę Item No. – jaki format numeru artykułu?</div><div class="item-sub">Czy zachować SKU z Pimcore/Optima czy nowy schemat?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Ustalić model wariantów: kolory/rozmiary jako osobne Items czy Variants?</div><div class="item-sub">BC ma Item Variants – zweryfikować czy pasuje do struktury Pimcore</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Lista atrybutów towarów do przeniesienia z Pimcore do BC</div><div class="item-sub">Które atrybuty muszą być w BC, które tylko w Pimcore</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Item Categories – struktura kategorii towarów w BC</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">UOM (jednostki miary) – szt., para, kpl., m² itd.</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Kategorie zapasu (Item Categories) – hierarchia kategorii produktów w BC</div><div class="item-sub">Skąd pobrać: z Pimcore (kategorie) czy odświeżyć ręcznie? Mapowanie Pimcore categories → BC Item Categories</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Tłumaczenia zapasu (Item Translations) – które języki są wymagane?</div><div class="item-sub">BC obsługuje tłumaczenia nazw towarów per język (PL, EN, FR, DE…). Źródło: Pimcore czy ręczne?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Kody HS / CN (taryfy celne) – wymagane przy eksporcie poza UE</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Metoda wyceny zapasu (FIFO / Average / Standard)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapa integracji Pimcore → BC: które pola, jak często, kto buduje</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Test importu produktów (sample ~100 SKU)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Pełny import produktów z Pimcore (~30 000 SKU) – plan i weryfikacja</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>💰</span> Cenniki (Price Lists)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Struktura cenników: B2C PLN, B2C EUR, B2B, hurtowy, walutowe</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Źródło cen zakupu – z Pimcore czy ręcznie w BC?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Rabaty grupowe (Customer Discount Groups) – kto decyduje o poziomach?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Kto zarządza cennikami w BC (właściciel procesu)?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Import cenników – format, źródło, test</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>👥</span> Klienci (Customers)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Segmentacja klientów: B2C / B2B / rynek / kanał sprzedaży</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Model klientów jednorazowych B2C (guest checkout z Shopify)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Walidacja VAT UE przez VIES – automatyczna w BC?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">SIREN/SIRET dla klientów francuskich – pole niestandardowe?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Wiele adresów ship-to (np. sklepy B2B z wieloma lokalizacjami)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Migracja klientów z Optima PL – liczba rekordów, jakość danych</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Migracja klientów z Optima LUX</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie klientów Shopify → BC (jak nowi klienci B2C trafiają do BC)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🏭</span> Dostawcy / Fabryki (Vendors)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Lista ~10 fabryk PL – dane: NIP, bank, adres, warunki płatności</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Lead Time per dostawca / per kategoria towarów</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Powiązanie dostawca ↔ Partner Portal (ID dostawcy)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Migracja dostawców z Optima</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Item-Vendor assignments (który towar od której fabryki)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🗂️</span> BOM / Receptury (Bill of Materials)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Czy BesoLux posiada receptury komponentów (tkaniny, nogi, stelaże)?</div><div class="item-sub">Sprawdzić: czy produkty mają komponenty czy kupowane są gotowe wyroby</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Czy fabryki zamawiają materiały same, czy BesoLux dostarcza surowce do fabryki?</div><div class="item-sub">Jeśli BesoLux dostarcza: potrzebny Subcontracting z wydaniem komponentów do produkcji</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Assembly Orders vs. Production Orders vs. brak BOM – który model pasuje?</div><div class="item-sub">Assembly: składanie elementów; Production: pełna produkcja z komponentów</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Źródło receptur – Pimcore, Optima czy ręcznie w BC?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Import BOM z Pimcore do BC – plan integracji (jeśli dotyczy)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🏷️</span> Śledzenie towarów (Item Tracking)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Czy wymagane śledzenie po numerze partii (Lot No.) lub serii (Serial No.)?</div><div class="item-sub">Meble raczej nie, ale sprawdzić np. dla tkanin importowanych lub towarów z certyfikatami</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Country of Origin na poziomie towaru (wymagane przy eksporcie poza UE)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Numery EAN/GTIN na kartotece – czy potrzebne w BC?</div><div class="item-sub">Już jest w Pimcore – czy BC potrzebuje, np. do etykiet magazynowych?</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🏗️</span> Konfiguracja BC – dane referencyjne</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Plan kont – mapowanie Optima → BC (z pomocą księgowej Kingi)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Wymiary analityczne: Brand, Channel, Warehouse, Country, Department</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Grupy księgowania klientów (B2C PL / B2C EU / B2B EU / B2B non-EU)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Grupy księgowania dostawców (Fabryki PL / Zagranica)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Grupy księgowania towarów (Meble / Opłaty / Item Charges)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">VAT Posting Groups: 23% / 8% / 0% / WDT / LUX</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Waluty: EUR, GBP, USD, PLN + auto kursy NBP</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Terminy płatności (mapowanie z Optima)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Shipping Agents: DPD, UPS, VIR, FUTAR…</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Lokalizacje magazynowe (ile, nazwy, czy potrzebne strefy/Bins?)</div></div></div>
+    </div>
+
+
+    <div class="section">
+      <div class="section-title"><span>�</span> Użytkownicy i role BC</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Lista użytkowników BC – skąd pobrać: Azure Active Directory / Microsoft 365 BesoLux</div><div class="item-sub">BC integruje się z Azure AD – użytkownicy liczą się jako licencje; lista powinna objąć obie spółki</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Zestawy uprawnień (Permission Sets) per rola: sprzedaż, zakupy, magazyn, finanse, IT, management</div><div class="item-sub">Sprawdzić standardowe zestawy BC + ewentualne ograniczenia dostępu do danych LUX vs PL</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Rodzaj licencji BC per użytkownik: Essential / Premium / Team Member / Device</div><div class="item-sub">Premium wymagany np. dla obsługi modułu Produkcji lub Service Management</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Single Sign-On (SSO) i MFA – konfiguracja z IT BesoLux (Kamil M.)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Kto będzie administratorem BC po wdrożeniu?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Dostęp do środowisk: Sandbox (testowe) i Production – konfiguracja per użytkownik</div></div></div>
+    </div>
+      <textarea class="note-input" placeholder="Ustalenia ws. danych podstawowych, problemy z jakością danych, kontakty do właścicieli…" data-key="note-ph1" oninput="saveNote(this)"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ETAP 2 – SPRZEDAŻ
+════════════════════════════════════════════════════════════ -->
+<div class="phase" id="ph2">
+  <div class="phase-header ph2" onclick="toggle('ph2')">
+    <div class="phase-icon">💰</div>
+    <div class="phase-info">
+      <h2>Etap 2 – Sprzedaż</h2>
+      <p>B2C Shopify / Marketplace, B2B, VeePee, zwroty (KS). Wymaga gotowego Master Data.</p>
+    </div>
+    <div class="phase-progress">
+      <div class="mini-bar"><div class="mini-fill mf2" id="ph2-fill" style="width:0%"></div></div>
+      <div class="phase-pct" id="ph2-pct">0%</div>
+    </div>
+    <div class="chevron">›</div>
+  </div>
+  <div class="phase-body">
+
+    <div class="section">
+      <div class="section-title"><span>�️</span> Warsztat: Mapowanie procesów sprzedaży (As-Is → To-Be)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Warsztat ze sprzedażą: proces B2C – jak działa dziś? (Shopify → Optima → Wysyłka)</div><div class="item-sub">Właściciele: Recep Enes Sonmes + IT (Kamil M.)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Warsztat: proces B2B – oferta, zamówienie, WDT, faktura</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Warsztat: proces VeePee / Flash sale – jak działa Cands App i jak zastąpić</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Warsztat: proces zwrotów od klientów (ReturnApp → BC)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Warsztat: marketplace (Allegro, Amazon) – jak działa obsługa dziś?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">GAP Analysis Sprzedaż – lista odchyleń od standardu BC, zakres customizacji</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>�🛒</span> B2C – Shopify / Marketplace</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Konfiguracja natywnego konektora Shopify ↔ BC</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie pól zamówienia Shopify → Sales Order BC</div><div class="item-sub">Status, płatność, adres, VAT, tagi → wymiary BC</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Weryfikacja stanu magazynu i rezerwacji towaru po przyjęciu SO</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Przepływ: Sales Order → WZ (Shipment) → FS (Invoice) – automatyzacja</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Integracja BC → LABApp (etykiety kurierskie DPD/UPS/VIR/FUTAR)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">BC → Shopify: tracking update po wysyłce</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Model rozliczania płatności Shopify Payments w BC (per transakcja czy zbiorczo?)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie tagów Shopify → wymiary analityczne BC (Brand, Channel…)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Obsługa VAT przy eksporcie poza UE (0%, dokumentacja)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Test end-to-end: zamówienie Shopify → WZ → FS → tracking</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Obsługa backorderów – co gdy towar niedostępny w chwili zamówienia?</div><div class="item-sub">Rezerwacja przyszłego stanu vs. blokada zamówienia vs. informacja do klienta</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Multi-shop Shopify – czy jest więcej niż jeden sklep Shopify (PL/EU/LUX)?</div><div class="item-sub">Każdy sklep = osobna konfiguracja konektora BC↔Shopify</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Shipup ↔ BC: tracking przesyłek po wysyłce (powiadomienia do klienta)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🛍️</span> Marketplace (Allegro, Amazon, inne)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Lista aktywnych marketplace'ów – Allegro, Amazon, Cdiscount, inne?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Model integracji marketplace → BC (przez Shopify czy bezpośrednio?)</div><div class="item-sub">Jeśli przez Shopify: uproszczone; bezpośrednio: więcej elastyczności</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Fakturowanie zamówień marketplace – dokumenty w BC</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🏢</span> B2B (krajowe i WDT)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Konfiguracja Sales Quotes (zastąpienie OfertApp)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Przepływ: Quote → Sales Order (RO) → WZ → FS</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">WDT – faktury 0% VAT, walidacja VIES, warunki</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Obsługa SIREN/SIRET dla klientów FR (pole customowe?)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>⚡</span> VeePee / Flash B2B</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Projekt nowego rozwiązania zastępującego Cands App</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Integracja VP → BC (przez Shopify czy bezpośrednia?)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>↩️</span> Zwroty od klientów (KS / Credit Memo)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Konfiguracja Sales Return Order → Return Receipt → Credit Memo</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Zastąpienie ReturnApp przez standardowy BC</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Proces inspekcji zwrotu – czy w BC czy w ControApp?</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📝</span> Notatki – Sprzedaż</div>
+      <textarea class="note-input" placeholder="Ustalenia, wyjątki, edge cases…" data-key="note-ph2" oninput="saveNote(this)"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ETAP PRODUKCJA – PRODUKCJA ZLECANA
+════════════════════════════════════════════════════════════ -->
+<div class="phase" id="phP">
+  <div class="phase-header phP" onclick="toggle('phP')">
+    <div class="phase-icon">🔨</div>
+    <div class="phase-info">
+      <h2>Etap 3b – Produkcja zlecana (Subcontracting) ⭐</h2>
+      <p>BesoLux zleca produkcję mebli do ~10 fabryk PL. Kluczowa decyzja: Production Orders / Subcontracting czy tylko PO?</p>
+    </div>
+    <div class="phase-progress">
+      <div class="mini-bar"><div class="mini-fill mfP" id="phP-fill" style="width:0%"></div></div>
+      <div class="phase-pct" id="phP-pct">0%</div>
+    </div>
+    <div class="chevron">›</div>
+  </div>
+  <div class="phase-body">
+
+    <div class="section">
+      <div class="section-title"><span>�️</span> Warsztat: Mapowanie procesów produkcji (As-Is → To-Be)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Warsztat z zakupami: jak dziś wygląda cykl zlecania produkcji do fabryki?</div><div class="item-sub">Właściciele: Krzysztof Ordecha, Mariusz Pacyna</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie przepływu: BesoLux zamawia → fabryka potwierdza → produkuje → dostarcza</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie komunikacji z fabrykami – co teraz idzie przez Partner Portal, co przez email/telefon?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie obsługi reklamacji do fabryk</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">GAP Analysis Produkcja – odchylenia od standardu BC, zakres customizacji</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>�🔑</span> Kluczowe decyzje: model produkcji w BC</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Czy wdrażamy moduł Production Orders w BC?</div><div class="item-sub">Alternatywa: tylko Purchase Orders do fabryk + BOM w Pimcore (poza BC)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Subcontracting BC: Production Order → automatyczna PO do fabryki</div><div class="item-sub">Wymaga konfiguracji Routing + Work Centers dla każdego subcontractora</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Planowanie produkcji: czy BC ma generować zlecenia produkcji z SO / MRP?</div><div class="item-sub">Production forecast lub demand-driven z Sales Orders</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Warsztaty z Krzysztofem Ordechą i Mariuszem Pacyną (zakupy/produkcja) – zaplanowane</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📊</span> Planowanie i śledzenie zleceń produkcyjnych</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Jak działa planowanie produkcji dziś? (Excel, Optima, skrypt?)</div><div class="item-sub">Zrozumieć As-Is przed zaprojektowaniem To-Be w BC</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Horyzont planowania: ile tygodni/miesięcy z góry zamawia się produkcję?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Jak fabryka potwierdza termin realizacji? (Partner Portal / email / telefon?)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Monitoring statusu zlecenia w fabryce – czy Partner Portal to obsługuje?</div><div class="item-sub">Etapy: złożono zamówienie → potwierdzono → w produkcji → gotowe → wysłano</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Obsługa opóźnień – jak BC/PP informuje sprzedaż o przesunięciach terminów?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Partial delivery z fabryki (dostawy częściowe jednego zlecenia)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🏭</span> Konfiguracja fabryk w BC jako subcontractorzy</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Work Centers per fabryka (nazwa, pojemność, lead time)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Routing (operacja: "Produkcja w fabryce X") per kategoria mebli</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Subcontracting Purchase Order – konfiguracja automatycznego generowania PO z Production Order</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>⚠️</span> Jakość i reklamacje do fabryk</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Proces kontroli jakości przy przyjęciu towaru z fabryki – gdzie dokumentowany w BC?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Purchase Return Order do fabryki (zwrot towaru wadliwego)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Nota obciążeniowa do fabryki za braki / niezgodności jakościowe</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Czy reklamacje do fabryk obsługiwane przez Zendesk czy BC?</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📝</span> Notatki – Produkcja zlecana</div>
+      <textarea class="note-input" placeholder="Ustalenia ws. modelu produkcji, decyzje, kontakty do fabryk…" data-key="note-phP" oninput="saveNote(this)"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ETAP 3 – ZAKUPY / FABRYKI
+════════════════════════════════════════════════════════════ -->
+<div class="phase" id="ph3">
+  <div class="phase-header ph3" onclick="toggle('ph3')">
+    <div class="phase-icon">🏭</div>
+    <div class="phase-info">
+      <h2>Etap 3 – Zakupy / Fabryki</h2>
+      <p>Planowanie (ZD/PO), Partner Portal, przyjęcie towaru (PZ), faktury zakupu (FZ)</p>
+    </div>
+    <div class="phase-progress">
+      <div class="mini-bar"><div class="mini-fill mf3" id="ph3-fill" style="width:0%"></div></div>
+      <div class="phase-pct" id="ph3-pct">0%</div>
+    </div>
+    <div class="chevron">›</div>
+  </div>
+  <div class="phase-body">
+
+    <div class="section">
+      <div class="section-title"><span>�️</span> Warsztat: Mapowanie procesów zakupowych (As-Is → To-Be)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Warsztat z zakupami: pełny cykl zamówienia (ZD → PZ → FZ) – jak działa dziś?</div><div class="item-sub">Właściciele: Krzysztof Ordecha, Mariusz Pacyna</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie planowania zakupów As-Is (skrypty MRP z Optima, Excel?)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie przepływu z Partner Portal – co fabryki widzą, co potwierdzają</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie kontroli faktury zakupu (3-way match) – jak działa teraz?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">GAP Analysis Zakupy – odchylenia od standardu BC, zakres customizacji</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>�📋</span> Planowanie zakupów (MRP)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Konfiguracja Planning Worksheet – zastąpienie skryptów MRP z Optima</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Reorder Point / Safety Stock per artykuł</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Automatyczny podział ZD na fabryki (Item-Vendor assignment)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Dropshipment: SO → PO → dostawa bezpośrednio do klienta</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Lead Time Calculation per dostawca – konfiguracja i test</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Order Promising (Promised Delivery Date na SO)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🤝</span> Partner Portal ↔ BC</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Zastąpienie skryptu T2S_DX_BES nową integracją BC ↔ PP</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">BC → PP: wysyłanie PO do fabryki</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">PP → BC: potwierdzenia terminów (Expected Receipt Date)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">PP → BC: faktury zakupu / dokumenty dostawy</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📥</span> Przyjęcie towaru (PZ / Warehouse Receipt)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Integracja ScanApp / Zebra → BC (przyjęcie na skaner)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Obsługa dostaw częściowych (Partial Receipt)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Kontrola jakości przy przyjęciu – jak dokumentowana w BC?</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🧾</span> Faktura zakupu (FZ / Purchase Invoice)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">3-way match: PO + PZ (Receipt) + FZ (Invoice)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Item Charges – alokacja kosztów transportu i cła na pozycje</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📝</span> Notatki – Zakupy</div>
+      <textarea class="note-input" placeholder="Ustalenia ws. fabryk, Partner Portal, planowania…" data-key="note-ph3" oninput="saveNote(this)"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ETAP 4 – MAGAZYN
+════════════════════════════════════════════════════════════ -->
+<div class="phase" id="ph4">
+  <div class="phase-header ph4" onclick="toggle('ph4')">
+    <div class="phase-icon">🚚</div>
+    <div class="phase-info">
+      <h2>Etap 4 – Magazyn (WMS)</h2>
+      <p>WZ, PZ, przesunięcia MM, inwentaryzacja. Kluczowa decyzja: czy wdrażamy pełne WMS?</p>
+    </div>
+    <div class="phase-progress">
+      <div class="mini-bar"><div class="mini-fill mf4" id="ph4-fill" style="width:0%"></div></div>
+      <div class="phase-pct" id="ph4-pct">0%</div>
+    </div>
+    <div class="chevron">›</div>
+  </div>
+  <div class="phase-body">
+
+    <div class="section">
+      <div class="section-title"><span>�️</span> Warsztat: Mapowanie procesów magazynowych (As-Is → To-Be)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Warsztat z magazynem: pełny cykl przyjęcia towaru (PZ) – jak działa dziś?</div><div class="item-sub">Właściciel: Kamil Grzelczak (kierownik magazynu)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie procesu wydania towaru (WZ) – pick, pack, ship</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie przesunięć między lokalizacjami (MM)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie procesu inwentaryzacji (kiedy, jak, kto)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Inwentaryzacja magazynu: ile lokalizacji/stref, jak działają skanery Zebra dziś?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">GAP Analysis Magazyn – odchylenia od standardu BC, zakres customizacji</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>�🔑</span> Decyzja kluczowa: zakres WMS</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Czy wdrażamy pełne WMS z Bins i Directed Put-Away?</div><div class="item-sub">Prostsze lokalizacje vs. pełne zarządzanie strefami i lokacjami</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Ile lokalizacji BC (magazynów)? Nazwy, typy</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📤</span> Wydania towaru (WZ / Warehouse Shipment)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Konfiguracja: Pick → Warehouse Shipment (WZ)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Posting WZ → automatyczna aktualizacja SO + wyzwalacz faktury FS</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Integracja BC → LABApp: etykiety DPD/UPS/VIR/FUTAR</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📦</span> Przyjęcia i przesunięcia</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Warehouse Receipt (PZ) – konfiguracja i test</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Transfer Order (MM): przesunięcie między lokalizacjami</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Skanery Zebra / ScanApp – integracja i testy na hali</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🔢</span> Inwentaryzacja</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Physical Inventory Journal – konfiguracja</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Cycle Counting – jeśli decyzja o rotacyjnej</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📝</span> Notatki – Magazyn</div>
+      <textarea class="note-input" placeholder="Ustalenia ws. WMS, lokalizacji, skanerów…" data-key="note-ph4" oninput="saveNote(this)"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ETAP 5 – FINANSE
+════════════════════════════════════════════════════════════ -->
+<div class="phase" id="ph5">
+  <div class="phase-header ph5" onclick="toggle('ph5')">
+    <div class="phase-icon">📊</div>
+    <div class="phase-info">
+      <h2>Etap 5 – Finanse</h2>
+      <p>AR, AP, VAT, banki, zamknięcie okresu, środki trwałe</p>
+    </div>
+    <div class="phase-progress">
+      <div class="mini-bar"><div class="mini-fill mf5" id="ph5-fill" style="width:0%"></div></div>
+      <div class="phase-pct" id="ph5-pct">0%</div>
+    </div>
+    <div class="chevron">›</div>
+  </div>
+  <div class="phase-body">
+
+    <div class="section">
+      <div class="section-title"><span>�️</span> Warsztat: Mapowanie procesów finansowych (As-Is → To-Be)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Warsztat z finansami: AR – jak dziś ewidencjonowane są należności i płatności?</div><div class="item-sub">Właściciel: Kinga Szymczak (CFO / finanse)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie AP – zobowiązania, przelewy krajowe i SEPA, płatności do fabryk</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie rozliczeń VAT PL i LUX – jak dziś przygotowywane deklaracje?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie zamknięcia okresu – jakie kroki, kto odpowiada, jak długo trwa?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Mapowanie banków – ile kont, jakie formaty wyciągów (MT940/CAMT)?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">GAP Analysis Finanse – odchylenia od standardu BC, zakres customizacji</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>�💳</span> Należności (AR)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Rozliczanie płatności od klientów (payment application)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Monity / Reminders – konfiguracja poziomów</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Shopify Payments → BC: per transakcja czy zbiorczo?</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>💸</span> Zobowiązania (AP)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Payment Journal → eksport przelewów do banku (SEPA / PLN)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Uzgodnienia sald dostawców</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🧾</span> VAT i podatki</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Deklaracja VAT-7 (PL localization) – konfiguracja i test</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">VAT-UE / VIES / WDT / WNT</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">VAT LUX – kto obsługuje deklaracje (biuro rachunkowe LUX)?</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🏦</span> Banki</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Lista banków i formatów: MT940/CAMT.053 import, SEPA export</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Uzgodnienie bankowe – konfiguracja i test importu wyciągu</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📅</span> Zamknięcie okresu</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Rewaluacja walut (multi-currency) – konfiguracja</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Środki trwałe (Fixed Assets) – czy prowadzimy w BC?</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Cash Flow Forecast – konfiguracja</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📝</span> Notatki – Finanse</div>
+      <textarea class="note-input" placeholder="Ustalenia z Kingą Szymczak, Malwiną Stachowską…" data-key="note-ph5" oninput="saveNote(this)"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ETAP 6 – INTEGRACJE (techniczne)
+════════════════════════════════════════════════════════════ -->
+<div class="phase" id="ph6">
+  <div class="phase-header ph6" onclick="toggle('ph6')">
+    <div class="phase-icon">🔗</div>
+    <div class="phase-info">
+      <h2>Etap 6 – Integracje techniczne</h2>
+      <p>Pimcore, Shopify, Partner Portal, Power BI, banki, pozostałe systemy</p>
+    </div>
+    <div class="phase-progress">
+      <div class="mini-bar"><div class="mini-fill mf6" id="ph6-fill" style="width:0%"></div></div>
+      <div class="phase-pct" id="ph6-pct">0%</div>
+    </div>
+    <div class="chevron">›</div>
+  </div>
+  <div class="phase-body">
+
+    <div class="section">
+      <div class="section-title"><span>🖼️</span> Pimcore ↔ BC</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Specyfikacja techniczna integracji (pola, format, częstotliwość)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Budowa integracji Pimcore → BC (API DataHub)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Testy integracji (produkty, ceny, stany – opcjonalnie)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>🛒</span> Shopify ↔ BC</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Konfiguracja natywnego konektora BC ↔ Shopify</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Test pełnego przepływu zamówienia (end-to-end)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Zastąpienie Shopify Fulfiller</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📊</span> Raportowanie i pozostałe</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Power BI – konfiguracja konektora BC → PBI</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Ustalenie listy raportów PBI gotowych na go-live (Julien Vugeic)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Zendesk ↔ BC (priorytet niski)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Shipup ↔ BC (tracking przesyłek)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📝</span> Notatki – Integracje</div>
+      <textarea class="note-input" placeholder="Odpowiedzialności, kamienie milowe integracji…" data-key="note-ph6" oninput="saveNote(this)"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ETAP 7 – MIGRACJA I GO-LIVE
+════════════════════════════════════════════════════════════ -->
+<div class="phase" id="ph7">
+  <div class="phase-header ph7" onclick="toggle('ph7')">
+    <div class="phase-icon">🔄</div>
+    <div class="phase-info">
+      <h2>Etap 7 – Migracja danych i Go-Live</h2>
+      <p>Migracja z Optima, opening balances, cutover plan, uruchomienie produkcyjne</p>
+    </div>
+    <div class="phase-progress">
+      <div class="mini-bar"><div class="mini-fill mf7" id="ph7-fill" style="width:0%"></div></div>
+      <div class="phase-pct" id="ph7-pct">0%</div>
+    </div>
+    <div class="chevron">›</div>
+  </div>
+  <div class="phase-body">
+
+    <div class="section">
+      <div class="section-title"><span>📦</span> Migracja danych</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Klienci PL + LUX – migracja z Optima (RapidStart / CSV)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Dostawcy – migracja z Optima</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Plan kont – mapping i import G/L accounts</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Weryfikacja jakości danych po migracji (raporty kontrolne)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>💰</span> Opening Balances (saldo otwarcia)</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Stan magazynowy na dzień cutover (Physical Inventory)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Otwarte należności (salda klientów)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Otwarte zobowiązania (salda dostawców)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Saldo kont G/L (Opening G/L Journal)</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Otwarte SO/RO i PO/ZD – czy przenosić do BC?</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📅</span> Cutover i Go-Live</div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Cutover Plan – szczegółowy harmonogram przełączenia</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Równoległe działanie Optima + BC – plan i czas trwania</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">User Acceptance Testing (UAT) – testy u użytkowników końcowych</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Szkolenia użytkowników BC</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Go-Live! Uruchomienie produkcyjne BC</div></div></div>
+      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Hypercare – wsparcie powdrożeniowe (plan)</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span>📝</span> Notatki – Migracja / Go-Live</div>
+      <textarea class="note-input" placeholder="Ustalenia ws. cutover, daty, ryzyka…" data-key="note-ph7" oninput="saveNote(this)"></textarea>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+'use strict';
+const STORE = 'besolux-checklist-v2';
+
+// ── Section IDs (stable: phaseId-sN) ─────────────────────────────────────────
+function initSectionLinks() {
+  const href = 'https://nav24.atlassian.net/wiki/spaces/besolux/pages/964526119/List+of+processes';
+  document.querySelectorAll('.section').forEach(sec => {
+    if (sec.querySelector('.note-input') || sec.querySelector('.section-process-link')) return;
+    const title = sec.querySelector('.section-title');
+    if (!title) return;
+    const link = document.createElement('a');
+    link.href = href;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.className = 'section-process-link';
+    link.textContent = '📄 Lista procesów';
+    title.appendChild(link);
+  });
+}
+
+function assignSectionIds() {
+  document.querySelectorAll('.phase').forEach(ph => {
+    ph.querySelectorAll('.section').forEach((sec, si) => {
+      if (!sec.dataset.sid) sec.dataset.sid = ph.id + '-s' + si;
+    });
+  });
+}
+
+// ── "+ Dodaj pozycję" buttons per section ─────────────────────────────────────
+function initAddButtons() {
+  document.querySelectorAll('.section').forEach(sec => {
+    if (sec.querySelector('.note-input') || sec.querySelector('.add-item-btn')) return;
+    const btn = document.createElement('button');
+    btn.className = 'add-item-btn';
+    btn.textContent = '+ Dodaj pozycję';
+    btn.onclick = () => addCustomItem(sec, null);
+    sec.appendChild(btn);
+  });
+}
+
+// ── Item controls (💬 comment + × delete) injected dynamically ───────────────
+function initItemControls() {
+  document.querySelectorAll('.item').forEach(item => {
+    if (item.dataset.ctrl) return;
+    item.dataset.ctrl = '1';
+
+    const cBtn = document.createElement('button');
+    cBtn.className = 'item-btn comment-btn';
+    cBtn.title = 'Komentarz';
+    cBtn.textContent = '💬';
+    cBtn.onclick = e => { e.stopPropagation(); toggleComment(item); };
+
+    const dBtn = document.createElement('button');
+    dBtn.className = 'item-btn del-btn';
+    dBtn.title = 'Usuń';
+    dBtn.textContent = '×';
+    dBtn.onclick = e => { e.stopPropagation(); deleteItem(item); };
+
+    item.appendChild(cBtn);
+    item.appendChild(dBtn);
+
+    // Comment area (sibling after item)
+    if (!item.nextElementSibling || !item.nextElementSibling.classList.contains('item-comment')) {
+      const cWrap = document.createElement('div');
+      cWrap.className = 'item-comment';
+      const ta = document.createElement('textarea');
+      ta.placeholder = 'Komentarz, ustalenie, pytanie…';
+      ta.oninput = saveState;
+      cWrap.appendChild(ta);
+      item.after(cWrap);
+    }
+  });
+}
+
+// ── Comment toggle ────────────────────────────────────────────────────────────
+function toggleComment(item) {
+  const cWrap = item.nextElementSibling;
+  if (!cWrap || !cWrap.classList.contains('item-comment')) return;
+  const open = cWrap.classList.toggle('visible');
+  item.querySelector('.comment-btn').classList.toggle('active', open);
+  if (open) cWrap.querySelector('textarea').focus();
+}
+
+// ── Delete item ───────────────────────────────────────────────────────────────
+function deleteItem(item) {
+  if (!confirm('Usunąć tę pozycję z listy?')) return;
+  item.classList.add('deleted');
+  const next = item.nextElementSibling;
+  if (next && next.classList.contains('item-comment')) next.classList.add('deleted');
+  updateProgress();
+  saveState();
+}
+
+// ── Add custom item ───────────────────────────────────────────────────────────
+function addCustomItem(sec, data) {
+  const id  = (data && data.id) ? data.id : ('cx' + Date.now() + Math.random().toString(36).slice(2,4));
+  const txt = (data && data.text) ? data.text : '';
+
+  const item = document.createElement('div');
+  item.className = 'item custom-item';
+  item.dataset.cid = id;
+  item.dataset.sid = sec.dataset.sid;
+
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  if (data && data.checked) { cb.checked = true; item.classList.add('done'); }
+
+  const content = document.createElement('div');
+  content.className = 'item-content';
+
+  const textEl = document.createElement('div');
+  textEl.className = 'item-text';
+  textEl.contentEditable = 'true';
+  textEl.spellcheck = false;
+  textEl.textContent = txt || 'Nowa pozycja – wpisz tekst…';
+  textEl.onfocus = () => { if (!txt && textEl.textContent.startsWith('Nowa pozycja')) textEl.textContent = ''; };
+  textEl.onblur  = () => { if (!textEl.textContent.trim()) textEl.textContent = 'Nowa pozycja – wpisz tekst…'; saveState(); };
+  textEl.oninput = saveState;
+
+  content.appendChild(textEl);
+  item.appendChild(cb);
+  item.appendChild(content);
+
+  // click to toggle checkbox
+  item.addEventListener('click', function(e) {
+    if (e.target.tagName==='BUTTON' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable || e.target.closest('.item-btn')) return;
+    cb.checked = !cb.checked;
+    item.classList.toggle('done', cb.checked);
+    updateProgress(); saveState();
+  });
+
+  const addBtn = sec.querySelector('.add-item-btn');
+  sec.insertBefore(item, addBtn);
+
+  initItemControls();
+  if (!data) { textEl.focus(); textEl.select(); }
+  updateProgress();
+  if (!data) saveState();
+  return item;
+}
+
+// ── Save state ────────────────────────────────────────────────────────────────
+function saveState() {
+  const s = {};
+
+  // Checkboxes (all items by DOM position, including custom)
+  document.querySelectorAll('.item').forEach((item, i) => {
+    const cb = item.querySelector('input[type=checkbox]');
+    if (cb) s['cb_' + i] = cb.checked;
+  });
+
+  // Phase notes
+  document.querySelectorAll('.note-input').forEach(n => { s[n.dataset.key] = n.value; });
+
+  // Comments (item-comment textareas by DOM position)
+  document.querySelectorAll('.item-comment').forEach((cw, i) => {
+    const ta = cw.querySelector('textarea');
+    if (ta && ta.value) s['cmt_' + i] = ta.value;
+    if (cw.classList.contains('visible')) s['cmt_open_' + i] = true;
+  });
+
+  // Deleted items
+  const del = [];
+  document.querySelectorAll('.item').forEach((item, i) => { if (item.classList.contains('deleted')) del.push(i); });
+  s._del = del;
+
+  // Custom items
+  const custom = [];
+  document.querySelectorAll('.item.custom-item').forEach(item => {
+    custom.push({
+      id:   item.dataset.cid,
+      sid:  item.dataset.sid,
+      text: item.querySelector('.item-text').textContent,
+      checked: item.querySelector('input[type=checkbox]').checked
+    });
+  });
+  s._custom = custom;
+
+  localStorage.setItem(STORE, JSON.stringify(s));
+  flashSaved();
+}
+
+// ── Load state ────────────────────────────────────────────────────────────────
+function loadState() {
+  const raw = localStorage.getItem(STORE);
+  if (!raw) return;
+  const s = JSON.parse(raw);
+
+  // 1. Restore custom items first (they affect DOM indices)
+  if (s._custom && s._custom.length) {
+    s._custom.forEach(data => {
+      const sec = document.querySelector('[data-sid="' + data.sid + '"]');
+      if (sec) addCustomItem(sec, data);
+    });
+  }
+
+  // 2. Checkboxes
+  document.querySelectorAll('.item').forEach((item, i) => {
+    const cb = item.querySelector('input[type=checkbox]');
+    if (cb && s['cb_' + i]) { cb.checked = true; item.classList.add('done'); }
+  });
+
+  // 3. Phase notes
+  document.querySelectorAll('.note-input').forEach(n => { if (s[n.dataset.key]) n.value = s[n.dataset.key]; });
+
+  // 4. Comments + visibility
+  document.querySelectorAll('.item-comment').forEach((cw, i) => {
+    const ta = cw.querySelector('textarea');
+    if (ta && s['cmt_' + i]) {
+      ta.value = s['cmt_' + i];
+      const prevItem = cw.previousElementSibling;
+      if (prevItem && prevItem.classList.contains('item')) {
+        prevItem.querySelector('.comment-btn').classList.add('has-comment');
+      }
+    }
+    if (s['cmt_open_' + i]) {
+      cw.classList.add('visible');
+      const prevItem = cw.previousElementSibling;
+      if (prevItem && prevItem.classList.contains('item')) {
+        prevItem.querySelector('.comment-btn').classList.add('active');
+      }
+    }
+  });
+
+  // 5. Deleted items
+  if (s._del && s._del.length) {
+    const allItems = document.querySelectorAll('.item');
+    s._del.forEach(i => {
+      if (allItems[i]) {
+        allItems[i].classList.add('deleted');
+        const next = allItems[i].nextElementSibling;
+        if (next && next.classList.contains('item-comment')) next.classList.add('deleted');
+      }
+    });
+  }
+}
+
+function saveNote(el) { saveState(); }
+
+// ── Flash "saved" ─────────────────────────────────────────────────────────────
+let _flashT;
+function flashSaved() {
+  const msg = document.getElementById('status-msg');
+  msg.textContent = 'Zapisano ✓';
+  clearTimeout(_flashT);
+  _flashT = setTimeout(() => { msg.textContent = 'Zmiany zapisują się automatycznie.'; }, 1800);
+}
+
+// ── Toggle item (existing items via onclick="toggle_item(this)") ───────────────
+function toggle_item(itemEl) {
+  if (event && event.target && (
+    event.target.tagName === 'TEXTAREA' ||
+    event.target.tagName === 'BUTTON'   ||
+    event.target.isContentEditable      ||
+    event.target.closest('.item-btn')   ||
+    event.target.closest('.item-comment')
+  )) return;
+  const cb = itemEl.querySelector('input[type=checkbox]');
+  cb.checked = !cb.checked;
+  itemEl.classList.toggle('done', cb.checked);
+  updateProgress();
+  saveState();
+}
+
+// ── Toggle phase ──────────────────────────────────────────────────────────────
+function toggle(id) { document.getElementById(id).classList.toggle('open'); }
+
+let allOpen = false;
+function toggleAll() {
+  allOpen = !allOpen;
+  document.querySelectorAll('.phase').forEach(p => p.classList.toggle('open', allOpen));
+  document.getElementById('expand-btn').textContent = allOpen ? '📁 Zwiń wszystko' : '📂 Rozwiń wszystko';
+}
+
+// ── Progress (excludes deleted items) ─────────────────────────────────────────
+function updateProgress() {
+  const phases = ['ph0','ph1','ph2','phP','ph3','ph4','ph5','ph6','ph7'];
+  let totalAll = 0, doneAll = 0;
+  phases.forEach(id => {
+    const ph = document.getElementById(id);
+    const items = ph.querySelectorAll('.item:not(.deleted) input[type=checkbox]');
+    const done  = ph.querySelectorAll('.item:not(.deleted) input[type=checkbox]:checked');
+    const total = items.length, cnt = done.length;
+    const pct   = total ? Math.round(cnt / total * 100) : 0;
+    document.getElementById(id + '-fill').style.width = pct + '%';
+    document.getElementById(id + '-pct').textContent  = pct + '%';
+    totalAll += total; doneAll += cnt;
+  });
+  const overallPct = totalAll ? Math.round(doneAll / totalAll * 100) : 0;
+  document.getElementById('overall-fill').style.width = overallPct + '%';
+  document.getElementById('overall-pct').textContent  = overallPct + '%';
+  document.getElementById('overall-count').textContent = doneAll + ' / ' + totalAll;
+}
+
+function resetAll() {
+  if (!confirm('Wyczyścić wszystkie zaznaczenia? Komentarze i notatki zostaną zachowane.')) return;
+  document.querySelectorAll('.item:not(.deleted) input[type=checkbox]').forEach(cb => {
+    cb.checked = false;
+    cb.closest('.item').classList.remove('done');
+  });
+  updateProgress();
+  saveState();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+assignSectionIds();
+initSectionLinks();
+initAddButtons();
+loadState();
+initItemControls();
+updateProgress();
+
+if (!localStorage.getItem(STORE)) {
+  document.getElementById('ph0').classList.add('open');
+}
+</script>
+</body>
+</html>
