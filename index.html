@@ -151,6 +151,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   outline: none; padding-bottom: 1px;
 }
 .item.custom-item .item-text[contenteditable]:focus { border-color: #818cf8; }
+.item-text[contenteditable="true"] {
+  outline: 2px solid #3b82f6; border-radius: 4px;
+  padding: 2px 6px; cursor: text; background: #eff6ff;
+}
+.edit-btn { color: #6b7280; }
+.edit-btn.editing { color: #2563eb; font-weight: bold; }
 
 /* ── Phase colors ── */
 .ph1 { border-left-color: #16a34a !important; }
@@ -863,6 +869,45 @@ function initItemControls() {
     item.appendChild(cBtn);
     item.appendChild(dBtn);
 
+    // ✏️ Edit button (static items only)
+    if (!item.classList.contains('custom-item')) {
+      const textEl = item.querySelector('.item-text');
+      const eBtn = document.createElement('button');
+      eBtn.className = 'item-btn edit-btn';
+      eBtn.title = 'Edytuj tekst';
+      eBtn.textContent = '✏️';
+      const startEdit = () => {
+        textEl.contentEditable = 'true';
+        textEl.spellcheck = false;
+        eBtn.textContent = '✓';
+        eBtn.title = 'Zatwierdź';
+        eBtn.classList.add('editing');
+        textEl.focus();
+        const r = document.createRange(); r.selectNodeContents(textEl); r.collapse(false);
+        const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      };
+      const stopEdit = () => {
+        textEl.contentEditable = 'false';
+        eBtn.textContent = '✏️';
+        eBtn.title = 'Edytuj tekst';
+        eBtn.classList.remove('editing');
+        saveState();
+      };
+      eBtn.onclick = e => {
+        e.stopPropagation();
+        if (textEl.contentEditable !== 'true') startEdit(); else stopEdit();
+      };
+      if (textEl) {
+        textEl.addEventListener('blur', () => { if (textEl.contentEditable === 'true') stopEdit(); });
+        textEl.addEventListener('keydown', e => {
+          if (e.key === 'Enter') { e.preventDefault(); textEl.blur(); }
+          if (e.key === 'Escape') textEl.blur();
+        });
+        textEl.addEventListener('input', saveState);
+      }
+      item.insertBefore(eBtn, cBtn);
+    }
+
     // Comment area (sibling after item)
     if (!item.nextElementSibling || !item.nextElementSibling.classList.contains('item-comment')) {
       const cWrap = document.createElement('div');
@@ -980,6 +1025,13 @@ function saveState() {
   });
   s._custom = custom;
 
+  // Item texts (static items; custom items handled by _custom)
+  document.querySelectorAll('.item').forEach((item, i) => {
+    if (item.classList.contains('custom-item')) return;
+    const textEl = item.querySelector('.item-text');
+    if (textEl) s['txt_' + i] = textEl.textContent;
+  });
+
   // Hidden phases
   const hiddenPhases = [];
   document.querySelectorAll('.phase.phase-del').forEach(ph => hiddenPhases.push(ph.id));
@@ -1040,7 +1092,14 @@ function loadState() {
     });
   }
 
-  // 2. Checkboxes
+  // 2. Restore item texts (after custom items so indices match)
+  document.querySelectorAll('.item').forEach((item, i) => {
+    if (item.classList.contains('custom-item')) return;
+    const textEl = item.querySelector('.item-text');
+    if (textEl && s['txt_' + i] !== undefined) textEl.textContent = s['txt_' + i];
+  });
+
+  // 3. Checkboxes
   document.querySelectorAll('.item').forEach((item, i) => {
     const cb = item.querySelector('input[type=checkbox]');
     if (cb && s['cb_' + i]) { cb.checked = true; item.classList.add('done'); }
