@@ -153,7 +153,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .item.custom-item .item-text[contenteditable]:focus { border-color: #818cf8; }
 
 /* ── Phase colors ── */
-.ph0 { border-left-color: #8b5cf6 !important; }
 .ph1 { border-left-color: #16a34a !important; }
 .ph2 { border-left-color: #dc2626 !important; }
 .ph3 { border-left-color: #059669 !important; }
@@ -195,6 +194,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .toolbar button:hover { background: #f3f4f6; }
 .toolbar button.danger { color: #ef4444; border-color: #fca5a5; }
 .toolbar button.danger:hover { background: #fff1f2; }
+.toolbar-file-btn {
+  padding: 7px 16px; border-radius: 7px; border: 1px solid #e5e7eb;
+  background: #fff; font-size: 12px; cursor: pointer; color: #374151;
+  font-weight: 500; transition: background .15s; white-space: nowrap;
+}
+.toolbar-file-btn:hover { background: #f3f4f6; }
 .status-msg { font-size: 11px; color: #9ca3af; }
 
 /* ── Expand all ── */
@@ -222,66 +227,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <div class="toolbar">
     <button id="expand-btn" onclick="toggleAll()">📂 Rozwiń wszystko</button>
     <button onclick="resetAll()" class="danger">🔄 Wyczyść zaznaczenia</button>
-    <span class="status-msg" id="status-msg">Zmiany zapisują się automatycznie w przeglądarce.</span>
+    <button onclick="exportState()" title="Pobierz plik JSON ze stanem checklisty (otwórz w innej przeglądarce)">💾 Backup stanu</button>
+    <label class="toolbar-file-btn" title="Wczytaj plik JSON z innej przeglądarki / karty">📂 Wczytaj stan<input type="file" accept=".json" onchange="importState(event)" style="display:none"></label>
+    <span class="status-msg" id="status-msg">Zmiany zapisują się automatycznie.</span>
   </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     ETAP 0 – FAZA ANALITYCZNA
-════════════════════════════════════════════════════════════ -->
-<div class="phase" id="ph0">
-  <div class="phase-header ph0" onclick="toggle('ph0')">
-    <div class="phase-icon">🔍</div>
-    <div class="phase-info">
-      <h2>Etap 0 – Faza analityczna (Discovery &amp; GAP)</h2>
-      <p>Zrozumienie procesów As-Is, zakres projektu, kluczowe decyzje przed startem konfiguracji</p>
-    </div>
-    <div class="phase-progress">
-      <div class="mini-bar"><div class="mini-fill mf0" id="ph0-fill" style="width:0%"></div></div>
-      <div class="phase-pct" id="ph0-pct">0%</div>
-    </div>
-    <div class="chevron">›</div>
-  </div>
-  <div class="phase-body">
-
-    <div class="section">
-      <div class="section-title"><span>📋</span> Kickoff i zakres projektu</div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Kickoff meeting z kluczowymi osobami BesoLux (Kinga, Kamil M., Recep)</div><div class="item-sub">Prezentacja metodyki Nav24, harmonogram, role i odpowiedzialności</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Zebranie i przegląd dokumentacji As-Is z Comarch Optima</div><div class="item-sub">Procesy sprzedaży, zakupów, magazynu, finansów – jak to działa teraz</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Weryfikacja zakresu: BesoLux PL vs BesoLux LUX</div><div class="item-sub">Czy LUX wdraża ten sam zakres co PL? Czy osobna instancja BC?</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Lista systemów zewnętrznych do integracji (Pimcore, Shopify, Partner Portal, Power BI, Zendesk, Shipup)</div><div class="item-sub">Kto jest właścicielem każdego systemu, kto buduje integrację</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Identyfikacja aplikacji do zastąpienia przez BC (OfertApp, ReturnApp, Cands App, ScanApp)</div><div class="item-sub">Co BC zastępuje, co zostaje, co wymaga dostosowania</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Akceptacja zakresu projektu przez sponsor (sign-off)</div></div></div>
-    </div>
-
-    <div class="section">
-      <div class="section-title"><span>❓</span> Kluczowe pytania / decyzje do podjęcia na starcie</div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Jedna instancja BC (2 spółki) czy oddzielne instancje PL + LUX?</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Czy wdrażamy WMS w BC (Bins, Directed Put-Away) czy proste lokalizacje?</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Czy historia transakcji przenosi się do BC czy zostaje w Optima (archiwum)?</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Data docelowego go-live / cutover</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Czy HRM Comarch integruje się z BC (kadry/płace)?</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Model integracji VeePee (VP) – przez Shopify czy osobna integracja?</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Kto buduje integracje? Nav24 / IT BesoLux / zewnętrzny partner?</div></div></div>
-    </div>
-
-    <div class="section">
-      <div class="section-title"><span>🗺️</span> Warsztaty mapowania procesów – kick-off</div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Zaplanowanie harmonogramu warsztatów mapowania per obszar</div><div class="item-sub">Sprzedaż, Produkcja, Zakupy, Magazyn, Finanse – oddzielne sesje z właścicielami procesów</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Stworzenie szablonu dokumentacji As-Is → To-Be (standard Nav24)</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">GAP Analysis – konsolidacja wyników ze wszystkich obszarów</div><div class="item-sub">Po zakończeniu warsztatów – lista odchyleń od standardu BC, zakres customizacji</div></div></div>
-      <div class="item" onclick="toggle_item(this)"><input type="checkbox"><div class="item-content"><div class="item-text">Prezentacja wyników GAP Analysis dla BesoLux (sign-off)</div></div></div>
-    </div>
-
-    <div class="section">
-      <div class="section-title"><span>📝</span> Notatki – Etap analityczny</div>
-      <textarea class="note-input" placeholder="Notatki ze spotkań, ustalenia, pytania otwarte…" data-key="note-ph0" oninput="saveNote(this)"></textarea>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════
-     ETAP 1 – MASTER DATA (najważniejszy fundament!)
-════════════════════════════════════════════════════════════ -->
 <div class="phase" id="ph1">
   <div class="phase-header ph1" onclick="toggle('ph1')">
     <div class="phase-icon">📦</div>
@@ -1144,7 +1094,7 @@ function toggleAll() {
 
 // ── Progress (excludes deleted items) ─────────────────────────────────────────
 function updateProgress() {
-  const phases = ['ph0','ph1','ph2','phP','ph3','ph4','ph5','ph6','ph7'];
+  const phases = ['ph1','ph2','phP','ph3','ph4','ph5','ph6','ph7'];
   let totalAll = 0, doneAll = 0;
   phases.forEach(id => {
     const ph = document.getElementById(id);
@@ -1172,6 +1122,29 @@ function resetAll() {
   saveState();
 }
 
+function exportState() {
+  const raw = localStorage.getItem(STORE) || '{}';
+  const blob = new Blob([raw], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'besolux-checklist-backup.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function importState(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      JSON.parse(e.target.result); // validate JSON
+      localStorage.setItem(STORE, e.target.result);
+      location.reload();
+    } catch(err) { alert('Błąd pliku: ' + err); }
+  };
+  reader.readAsText(file);
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 assignSectionIds();
 initSectionLinks();
@@ -1182,7 +1155,7 @@ loadState();
 updateProgress();
 
 if (!localStorage.getItem(STORE)) {
-  document.getElementById('ph0').classList.add('open');
+  document.getElementById('ph1').classList.add('open');
 }
 </script>
 </body>
