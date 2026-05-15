@@ -173,6 +173,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .phP { border-left-color: #d97706 !important; }
 .mfP { background: #d97706; }
 
+/* ── Phase hide button ── */
+.phase-hide-btn {
+  background: transparent; border: none; cursor: pointer;
+  color: rgba(255,255,255,.4); font-size: 20px; line-height: 1;
+  padding: 0 6px; border-radius: 4px; margin-left: 8px; flex-shrink: 0;
+  transition: color .15s, background .15s;
+}
+.phase-hide-btn:hover { color: rgba(255,255,255,.95); background: rgba(0,0,0,.2); }
+.phase.phase-del .phase-body { display: none !important; }
+.phase.phase-del .phase-header { opacity: 0.45; }
+.phase.phase-del .phase-hide-btn { color: rgba(255,255,255,.85) !important; font-size: 16px; }
+
 /* ── Toolbar ── */
 .toolbar { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
 .toolbar button {
@@ -860,6 +872,26 @@ function initAddButtons() {
 }
 
 // ── Item controls (💬 comment + × delete) injected dynamically ───────────────
+function initPhaseHideButtons() {
+  document.querySelectorAll('.phase').forEach(ph => {
+    const header = ph.querySelector('.phase-header');
+    if (!header || header.dataset.hideBtn) return;
+    header.dataset.hideBtn = '1';
+    const btn = document.createElement('button');
+    btn.className = 'phase-hide-btn';
+    btn.title = 'Ukryj etap';
+    btn.textContent = '×';
+    btn.onclick = e => {
+      e.stopPropagation();
+      const hidden = ph.classList.toggle('phase-del');
+      btn.textContent = hidden ? '↩' : '×';
+      btn.title = hidden ? 'Przywróć etap' : 'Ukryj etap';
+      saveState();
+    };
+    header.appendChild(btn);
+  });
+}
+
 function initItemControls() {
   document.querySelectorAll('.item').forEach(item => {
     if (item.dataset.ctrl) return;
@@ -997,6 +1029,11 @@ function saveState() {
   });
   s._custom = custom;
 
+  // Hidden phases
+  const hiddenPhases = [];
+  document.querySelectorAll('.phase.phase-del').forEach(ph => hiddenPhases.push(ph.id));
+  s._hidden_phases = hiddenPhases;
+
   localStorage.setItem(STORE, JSON.stringify(s));
   flashSaved();
 }
@@ -1051,6 +1088,18 @@ function loadState() {
         allItems[i].classList.add('deleted');
         const next = allItems[i].nextElementSibling;
         if (next && next.classList.contains('item-comment')) next.classList.add('deleted');
+      }
+    });
+  }
+
+  // 6. Hidden phases
+  if (s._hidden_phases && s._hidden_phases.length) {
+    s._hidden_phases.forEach(id => {
+      const ph = document.getElementById(id);
+      if (ph) {
+        ph.classList.add('phase-del');
+        const btn = ph.querySelector('.phase-hide-btn');
+        if (btn) { btn.textContent = '↩'; btn.title = 'Przywróć etap'; }
       }
     });
   }
@@ -1127,8 +1176,9 @@ function resetAll() {
 assignSectionIds();
 initSectionLinks();
 initAddButtons();
+initItemControls();       // must run BEFORE loadState so item-comment textareas exist
+initPhaseHideButtons();
 loadState();
-initItemControls();
 updateProgress();
 
 if (!localStorage.getItem(STORE)) {
